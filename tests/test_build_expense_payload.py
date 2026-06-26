@@ -104,3 +104,24 @@ def test_missing_mapping_raises():
     with pytest.raises(ValueError):
         build_expense_payload(result, payee="A", mapping={"A": 1},
                               group_id=None, description="x")
+
+
+def test_rounding_reconciliation_when_shares_overshoot_cost():
+    # 10.00 split 3 ways rounding up: 3.34×3 = 10.02; two cents must be removed.
+    result = make_result(
+        breakdown={
+            "A": {"pre_tax": 3.34, "tax": 0, "tip": 0, "total": 3.34},
+            "B": {"pre_tax": 3.34, "tax": 0, "tip": 0, "total": 3.34},
+            "C": {"pre_tax": 3.34, "tax": 0, "tip": 0, "total": 3.34},
+        },
+        total_paid=10.0,
+        payee="A",
+    )
+    payload = build_expense_payload(
+        result, payee="A", mapping={"A": 1, "B": 2, "C": 3},
+        group_id=None, description="x",
+    )
+    owed_cents = sum(round(float(u["owed_share"]) * 100) for u in payload["users"])
+    assert owed_cents == 1000
+    owed_shares = sorted(u["owed_share"] for u in payload["users"])
+    assert owed_shares == ["3.32", "3.34", "3.34"]

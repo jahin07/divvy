@@ -4,16 +4,18 @@ Pure helpers (build_expense_payload) are separated from HTTP so they can be
 unit-tested without network access.
 """
 
+from typing import Optional
 
-def _to_cents(amount):
+
+def _to_cents(amount: float) -> int:
     return round(float(amount) * 100)
 
 
-def _cents_to_str(cents):
+def _cents_to_str(cents: int) -> str:
     return f"{cents / 100:.2f}"
 
 
-def build_expense_payload(result, payee, mapping, group_id, description):
+def build_expense_payload(result: dict, payee: str, mapping: dict, group_id: Optional[int], description: str) -> dict:
     """Convert a compute_split result into a Splitwise expense payload.
 
     Returns a structured dict:
@@ -25,11 +27,12 @@ def build_expense_payload(result, payee, mapping, group_id, description):
     breakdown = result["breakdown"]
     names = list(breakdown.keys())
 
+    if payee not in breakdown:
+        raise ValueError(f"Payee '{payee}' is not in the breakdown")
+
     missing = [n for n in names if n not in mapping]
     if missing:
         raise ValueError(f"Missing Splitwise id mapping for: {missing}")
-    if payee not in mapping:
-        raise ValueError(f"Missing Splitwise id mapping for payee: {payee}")
 
     cost_cents = _to_cents(result["total_paid"])
 
