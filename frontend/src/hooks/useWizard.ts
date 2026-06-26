@@ -3,6 +3,7 @@ import type { WizardState, WizardAction } from '../types'
 
 const initialState: WizardState = {
   step: 1,
+  title: '',
   people: [
     { name: '', share: 1 },
     { name: '', share: 1 },
@@ -19,6 +20,8 @@ function reducer(state: WizardState, action: WizardAction): WizardState {
   switch (action.type) {
     case 'SET_STEP':
       return { ...state, step: action.step, error: null }
+    case 'SET_TITLE':
+      return { ...state, title: action.title }
     case 'SET_PEOPLE':
       return { ...state, people: action.people }
     case 'SET_PAYEE':

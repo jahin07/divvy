@@ -45,6 +45,7 @@ export interface CalculationResult {
 
 export interface WizardState {
   step: number
+  title: string
   people: Person[]
   payee: string | null
   items: Item[]
@@ -56,6 +57,7 @@ export interface WizardState {
 
 export type WizardAction =
   | { type: 'SET_STEP'; step: number }
+  | { type: 'SET_TITLE'; title: string }
   | { type: 'SET_PEOPLE'; people: Person[] }
   | { type: 'SET_PAYEE'; payee: string }
   | { type: 'SET_ITEMS'; items: Item[] }

@@ -14,9 +14,10 @@ interface StepResultsProps {
   people: Person[]
   payee: string
   groupId: number | null
+  title: string
 }
 
-export function StepResults({ results, error, loading, onBack, onReset, people, payee, groupId }: StepResultsProps) {
+export function StepResults({ results, error, loading, onBack, onReset, people, payee, groupId, title }: StepResultsProps) {
   const { status, pushExpense } = useSplitwise()
   const [pushing, setPushing] = useState(false)
   const [pushError, setPushError] = useState<string | null>(null)
@@ -33,7 +34,7 @@ export function StepResults({ results, error, loading, onBack, onReset, people, 
     const mapping = Object.fromEntries(
       people.filter((p) => p.splitwiseId != null).map((p) => [p.name, p.splitwiseId!]),
     )
-    const description = `Divvy split — ${new Date().toLocaleDateString()}`
+    const description = title.trim() || `Divvy split — ${new Date().toLocaleDateString()}`
     try {
       const res = await pushExpense({ result: results, payee, mapping, groupId, description })
       if (res.error) {

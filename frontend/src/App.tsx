@@ -148,6 +148,8 @@ export default function App() {
           >
             {state.step === 1 && (
               <StepPeople
+                title={state.title}
+                onTitleChange={(title) => dispatch({ type: 'SET_TITLE', title })}
                 people={state.people}
                 onChange={(people) => dispatch({ type: 'SET_PEOPLE', people })}
                 error={state.error}
@@ -196,6 +198,7 @@ export default function App() {
                 people={state.people}
                 payee={state.payee!}
                 groupId={splitwiseGroupId}
+                title={state.title}
               />
             )}
           </motion.div>

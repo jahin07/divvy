@@ -10,6 +10,8 @@ import { ChipCheckbox } from './ui/ChipCheckbox'
 import { useSplitwise } from '../hooks/useSplitwise'
 
 interface StepPeopleProps {
+  title: string
+  onTitleChange: (title: string) => void
   people: Person[]
   onChange: (people: Person[]) => void
   error: string | null
@@ -17,7 +19,7 @@ interface StepPeopleProps {
   onGroupIdChange: (id: number | null) => void
 }
 
-export function StepPeople({ people, onChange, error, onNext, onGroupIdChange }: StepPeopleProps) {
+export function StepPeople({ title, onTitleChange, people, onChange, error, onNext, onGroupIdChange }: StepPeopleProps) {
   const { status, getGroups, getFriends } = useSplitwise()
 
   const [importMode, setImportMode] = useState<'group' | 'friends'>('group')
@@ -29,6 +31,15 @@ export function StepPeople({ people, onChange, error, onNext, onGroupIdChange }:
   const [importError, setImportError] = useState<string | null>(null)
   const [selectedGroupId, setSelectedGroupId] = useState<string>('')
   const [selectedFriendIds, setSelectedFriendIds] = useState<Set<number>>(new Set())
+  const [groupSearch, setGroupSearch] = useState('')
+  const [friendSearch, setFriendSearch] = useState('')
+
+  const visibleGroups = groups.filter((g) =>
+    g.name.toLowerCase().includes(groupSearch.trim().toLowerCase()),
+  )
+  const visibleFriends = friends.filter((f) =>
+    f.name.toLowerCase().includes(friendSearch.trim().toLowerCase()),
+  )
 
   // The current Splitwise user. The friends endpoint never returns yourself, so
   // include "me" automatically in friends-based splits (you're virtually always
@@ -126,6 +137,18 @@ export function StepPeople({ people, onChange, error, onNext, onGroupIdChange }:
       title="Who's splitting?"
       description="Add everyone at the table. Adjust share weight for anyone paying a larger portion of shared items."
     >
+      <div className="mb-6">
+        <label className="block text-xs font-bold tracking-[0.15em] uppercase text-text-muted mb-2">
+          Bill title
+        </label>
+        <Input
+          type="text"
+          placeholder="e.g. Dinner at Luigi's"
+          value={title}
+          onChange={(e) => onTitleChange(e.target.value)}
+        />
+      </div>
+
       {status.configured && (
         <div className="mb-6 border border-border rounded-input p-4 bg-surface">
           <p className="text-xs font-bold tracking-[0.15em] uppercase text-amber mb-3">
@@ -159,18 +182,29 @@ export function StepPeople({ people, onChange, error, onNext, onGroupIdChange }:
               {groupsLoaded && groups.length === 0 ? (
                 <p className="text-text-muted text-sm">No groups found.</p>
               ) : (
-                <select
-                  value={selectedGroupId}
-                  onChange={handleGroupSelect}
-                  className="w-full pl-3.5 pr-3.5 py-3 border border-border rounded-input text-sm font-medium text-text bg-surface outline-none transition-[border-color,box-shadow] duration-200 focus:border-border-focus focus:shadow-[0_0_0_3px_var(--color-amber-dim)]"
-                >
-                  <option value="">Select a group…</option>
-                  {groups.map((g) => (
-                    <option key={g.id} value={g.id}>
-                      {g.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex flex-col gap-2">
+                  <Input
+                    type="text"
+                    placeholder="Search groups…"
+                    value={groupSearch}
+                    onChange={(e) => setGroupSearch(e.target.value)}
+                  />
+                  <select
+                    value={selectedGroupId}
+                    onChange={handleGroupSelect}
+                    className="w-full pl-3.5 pr-3.5 py-3 border border-border rounded-input text-sm font-medium text-text bg-surface outline-none transition-[border-color,box-shadow] duration-200 focus:border-border-focus focus:shadow-[0_0_0_3px_var(--color-amber-dim)]"
+                  >
+                    <option value="">Select a group…</option>
+                    {visibleGroups.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.name}
+                      </option>
+                    ))}
+                  </select>
+                  {groupSearch.trim() && visibleGroups.length === 0 && (
+                    <p className="text-text-muted text-sm">No groups match “{groupSearch}”.</p>
+                  )}
+                </div>
               )}
             </>
           )}
@@ -186,8 +220,15 @@ export function StepPeople({ people, onChange, error, onNext, onGroupIdChange }:
                       {me.name} (you) is included automatically.
                     </p>
                   )}
+                  <Input
+                    type="text"
+                    placeholder="Search friends…"
+                    value={friendSearch}
+                    onChange={(e) => setFriendSearch(e.target.value)}
+                    className="mb-2"
+                  />
                   <div className="flex flex-wrap gap-2">
-                    {friends.map((f) => (
+                    {visibleFriends.map((f) => (
                       <ChipCheckbox
                         key={f.id}
                         label={f.name}
@@ -196,6 +237,9 @@ export function StepPeople({ people, onChange, error, onNext, onGroupIdChange }:
                       />
                     ))}
                   </div>
+                  {friendSearch.trim() && visibleFriends.length === 0 && (
+                    <p className="text-text-muted text-sm mt-2">No friends match “{friendSearch}”.</p>
+                  )}
                 </>
               )}
             </>
