@@ -64,7 +64,7 @@ def test_create_expense_success(monkeypatch):
     def fake_post(url, headers=None, data=None):
         captured["url"] = url
         captured["data"] = data
-        return FakeResponse(200, {"expenses": [{"id": 999}], "errors": {}})
+        return FakeResponse(200, {"expenses": [{"id": 999}], "errors": []})
 
     monkeypatch.setattr(sw.requests, "post", fake_post)
     payload = {
@@ -86,6 +86,16 @@ def test_create_expense_surfaces_errors(monkeypatch):
     monkeypatch.setattr(
         sw.requests, "post",
         lambda *a, **k: FakeResponse(200, {"expenses": [], "errors": {"base": ["bad"]}}),
+    )
+    with pytest.raises(sw.SplitwiseError):
+        sw.create_expense({"cost": "1.00", "description": "x",
+                           "group_id": 0, "users": []})
+
+
+def test_create_expense_empty_expenses_raises(monkeypatch):
+    monkeypatch.setattr(
+        sw.requests, "post",
+        lambda *a, **k: FakeResponse(200, {"expenses": [], "errors": {}}),
     )
     with pytest.raises(sw.SplitwiseError):
         sw.create_expense({"cost": "1.00", "description": "x",

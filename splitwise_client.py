@@ -130,6 +130,7 @@ def create_expense(payload):
         raise SplitwiseError("Splitwise rejected the expense",
                              status=resp.status_code)
     body = resp.json()
-    if body.get("errors"):
-        raise SplitwiseError(str(body["errors"]), status=400)
+    if body.get("errors") or not body.get("expenses"):
+        raise SplitwiseError(str(body.get("errors") or "Splitwise returned no expense"),
+                             status=400)
     return body["expenses"][0]["id"]
