@@ -1,6 +1,23 @@
 export interface Person {
   name: string
   share: number
+  splitwiseId?: number
+}
+
+export interface SplitwiseUser {
+  id: number
+  name: string
+}
+
+export interface SplitwiseGroup {
+  id: number
+  name: string
+  members: SplitwiseUser[]
+}
+
+export interface SplitwiseStatus {
+  configured: boolean
+  user?: { id: number; first_name?: string }
 }
 
 export interface Item {
