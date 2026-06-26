@@ -1,7 +1,9 @@
-import type { CalculationResult } from '../types'
+import { useState } from 'react'
+import type { CalculationResult, Person } from '../types'
 import { Card } from './ui/Card'
 import { Button } from './ui/Button'
 import { ErrorMessage } from './ui/ErrorMessage'
+import { useSplitwise } from '../hooks/useSplitwise'
 
 interface StepResultsProps {
   results: CalculationResult | null
@@ -9,9 +11,39 @@ interface StepResultsProps {
   loading: boolean
   onBack: () => void
   onReset: () => void
+  people: Person[]
+  payee: string
+  groupId: number | null
 }
 
-export function StepResults({ results, error, loading, onBack, onReset }: StepResultsProps) {
+export function StepResults({ results, error, loading, onBack, onReset, people, payee, groupId }: StepResultsProps) {
+  const { status, pushExpense } = useSplitwise()
+  const [pushing, setPushing] = useState(false)
+  const [pushError, setPushError] = useState<string | null>(null)
+  const [pushSuccess, setPushSuccess] = useState<{ expenseId?: number } | null>(null)
+
+  const mapping = Object.fromEntries(
+    people.filter((p) => p.splitwiseId != null).map((p) => [p.name, p.splitwiseId!]),
+  )
+
+  const canPush =
+    results != null && people.length > 0 && people.every((p) => p.splitwiseId != null)
+
+  const handlePush = async () => {
+    if (!results || !canPush) return
+    setPushing(true)
+    setPushError(null)
+    setPushSuccess(null)
+    const description = `Divvy split — ${new Date().toLocaleDateString()}`
+    const res = await pushExpense({ result: results, payee, mapping, groupId, description })
+    setPushing(false)
+    if (res.error) {
+      setPushError(res.error)
+    } else {
+      setPushSuccess({ expenseId: res.expenseId })
+    }
+  }
+
   return (
     <Card label="Results" title="Here's the breakdown" description="Everyone's share, calculated fairly.">
       {loading && <p className="text-text-muted text-center py-8">Calculating...</p>}
@@ -82,6 +114,35 @@ export function StepResults({ results, error, loading, onBack, onReset }: StepRe
             )}
           </ul>
         </>
+      )}
+      {status.configured && (
+        <div className="mt-6 pt-6 border-t border-border">
+          {pushSuccess ? (
+            <p className="text-sm font-medium text-center text-green py-2 px-3 bg-green-dim rounded-input">
+              Added to Splitwise ✓
+              {pushSuccess.expenseId != null ? ` (expense #${pushSuccess.expenseId})` : ''}
+            </p>
+          ) : (
+            <>
+              <ErrorMessage message={pushError} />
+              <div className="flex flex-col items-center gap-2 mt-2">
+                <Button
+                  variant="ghost"
+                  onClick={() => void handlePush()}
+                  disabled={!canPush || pushing}
+                  className="disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {pushing ? 'Adding…' : 'Push to Splitwise'}
+                </Button>
+                {!canPush && (
+                  <p className="text-xs text-text-muted">
+                    Import people from Splitwise to enable
+                  </p>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       )}
       <ErrorMessage message={error} />
       <div className="flex justify-between mt-7 gap-2.5">

@@ -19,7 +19,6 @@ export default function App() {
   const [state, dispatch] = useWizard()
   const { calculate, loading } = useCalculate()
   const [splitwiseGroupId, setSplitwiseGroupId] = useState<number | null>(null)
-  void splitwiseGroupId // will be consumed by StepResults in Task 7
 
   const goToStep = useCallback(
     async (target: number) => {
@@ -194,6 +193,9 @@ export default function App() {
                 loading={loading}
                 onBack={() => goToStep(4)}
                 onReset={handleReset}
+                people={state.people}
+                payee={state.payee!}
+                groupId={splitwiseGroupId}
               />
             )}
           </motion.div>
