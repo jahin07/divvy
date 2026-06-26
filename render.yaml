@@ -1,0 +1,21 @@
+# Render Blueprint — deploys Divvy as a single Docker web service.
+# In the Render dashboard: New + → Blueprint → pick this repo. Then set the
+# secret env vars below (they are intentionally not stored in the repo).
+services:
+  - type: web
+    name: divvy
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      # Your personal Splitwise API key (from secure.splitwise.com/apps).
+      - key: SPLITWISE_API_KEY
+        sync: false
+      # Password gate so only you can use the deployed app. Pick any strong value.
+      - key: APP_PASSWORD
+        sync: false
+      # Username for the login prompt (default "divvy").
+      - key: APP_USER
+        value: divvy

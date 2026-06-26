@@ -103,6 +103,26 @@ python bill_split.py
 
 No external dependencies — standard library only.
 
+## Deploy your own instance (use it from your phone)
+
+Divvy ships with a `Dockerfile` and a `render.yaml` so you can run a private, always-on
+copy — handy for splitting bills on your phone while you're out, with Splitwise push
+working.
+
+1. Push this repo to GitHub (already done if you cloned from there).
+2. On [Render](https://render.com): **New + → Blueprint**, pick the repo. It reads
+   `render.yaml` and provisions a free Docker web service.
+3. Set the env vars when prompted:
+   - `SPLITWISE_API_KEY` — your key (enables Splitwise import/push).
+   - `APP_PASSWORD` — any strong value; the app then requires a login so only you can use
+     it (your Splitwise key sits behind it). `APP_USER` defaults to `divvy`.
+4. Open the resulting `https://<name>.onrender.com` URL on your phone and **Add to Home
+   Screen**.
+
+The container builds the frontend and serves it from the Flask app over one origin, so
+there's no separate API host. Health checks hit the unauthenticated `/healthz`. Without
+`APP_PASSWORD` the app is open (fine for local use); **always set it on a public URL.**
+
 ## How the split works
 
 When an item is shared by **everyone**, its cost is weighted by each person's share count.

@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, Response
 from bill_split import compute_split
 import splitwise_client as sw
 from splitwise_client import build_expense_payload, SplitwiseError
@@ -7,6 +7,30 @@ from splitwise_client import build_expense_payload, SplitwiseError
 DIST_DIR = os.path.join(os.path.dirname(__file__), 'static', 'dist')
 
 app = Flask(__name__, static_folder=DIST_DIR, static_url_path='')
+
+# Optional password gate. When APP_PASSWORD is set (e.g. on a public deployment
+# that holds a Splitwise key), every request requires HTTP Basic Auth. When it's
+# unset — local development — the app is wide open as before.
+APP_USER = os.environ.get('APP_USER', 'divvy')
+APP_PASSWORD = os.environ.get('APP_PASSWORD')
+
+
+@app.route('/healthz')
+def healthz():
+    return {'ok': True}
+
+
+@app.before_request
+def require_auth():
+    if not APP_PASSWORD or request.path == '/healthz':
+        return None
+    auth = request.authorization
+    if not auth or auth.username != APP_USER or auth.password != APP_PASSWORD:
+        return Response(
+            'Authentication required', 401,
+            {'WWW-Authenticate': 'Basic realm="Divvy"'},
+        )
+    return None
 
 
 @app.route('/api/calculate', methods=['POST'])
