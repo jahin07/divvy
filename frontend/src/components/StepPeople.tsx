@@ -31,6 +31,10 @@ export function StepPeople({ people, onChange, error, onNext, onGroupIdChange }:
   const [selectedFriendIds, setSelectedFriendIds] = useState<Set<number>>(new Set())
 
   useEffect(() => {
+    setImportError(null)
+  }, [importMode])
+
+  useEffect(() => {
     if (!status.configured) return
     if (importMode === 'group' && !groupsLoaded) {
       setImportLoading(true)
@@ -126,7 +130,7 @@ export function StepPeople({ people, onChange, error, onNext, onGroupIdChange }:
             <RadioCard
               name="Friends"
               selected={importMode === 'friends'}
-              onSelect={() => setImportMode('friends')}
+              onSelect={() => { setImportMode('friends'); onGroupIdChange(null) }}
             />
           </div>
 
@@ -138,7 +142,7 @@ export function StepPeople({ people, onChange, error, onNext, onGroupIdChange }:
 
           {!importLoading && !importError && importMode === 'group' && (
             <>
-              {groups.length === 0 ? (
+              {groupsLoaded && groups.length === 0 ? (
                 <p className="text-text-muted text-sm">No groups found.</p>
               ) : (
                 <select
@@ -159,7 +163,7 @@ export function StepPeople({ people, onChange, error, onNext, onGroupIdChange }:
 
           {!importLoading && !importError && importMode === 'friends' && (
             <>
-              {friends.length === 0 ? (
+              {friendsLoaded && friends.length === 0 ? (
                 <p className="text-text-muted text-sm">No friends found.</p>
               ) : (
                 <div className="flex flex-wrap gap-2">
