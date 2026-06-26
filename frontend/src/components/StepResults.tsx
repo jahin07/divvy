@@ -22,10 +22,6 @@ export function StepResults({ results, error, loading, onBack, onReset, people, 
   const [pushError, setPushError] = useState<string | null>(null)
   const [pushSuccess, setPushSuccess] = useState<{ expenseId?: number } | null>(null)
 
-  const mapping = Object.fromEntries(
-    people.filter((p) => p.splitwiseId != null).map((p) => [p.name, p.splitwiseId!]),
-  )
-
   const canPush =
     results != null && people.length > 0 && people.every((p) => p.splitwiseId != null)
 
@@ -34,13 +30,21 @@ export function StepResults({ results, error, loading, onBack, onReset, people, 
     setPushing(true)
     setPushError(null)
     setPushSuccess(null)
+    const mapping = Object.fromEntries(
+      people.filter((p) => p.splitwiseId != null).map((p) => [p.name, p.splitwiseId!]),
+    )
     const description = `Divvy split — ${new Date().toLocaleDateString()}`
-    const res = await pushExpense({ result: results, payee, mapping, groupId, description })
-    setPushing(false)
-    if (res.error) {
-      setPushError(res.error)
-    } else {
-      setPushSuccess({ expenseId: res.expenseId })
+    try {
+      const res = await pushExpense({ result: results, payee, mapping, groupId, description })
+      if (res.error) {
+        setPushError(res.error)
+      } else {
+        setPushSuccess({ expenseId: res.expenseId })
+      }
+    } catch (e) {
+      setPushError(e instanceof Error ? e.message : 'Network error')
+    } finally {
+      setPushing(false)
     }
   }
 
@@ -115,7 +119,7 @@ export function StepResults({ results, error, loading, onBack, onReset, people, 
           </ul>
         </>
       )}
-      {status.configured && (
+      {status.configured && results && !loading && (
         <div className="mt-6 pt-6 border-t border-border">
           {pushSuccess ? (
             <p className="text-sm font-medium text-center text-green py-2 px-3 bg-green-dim rounded-input">
