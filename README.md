@@ -23,6 +23,21 @@ real expense.
 - **Terminal CLI** — the same calculation core is available as a standalone interactive
   script, with no external dependencies.
 
+## How Divvy differs from Splitwise
+
+Splitwise is a **ledger** — it tracks who owes whom over time across many expenses,
+groups, and settle-ups. Divvy is a **calculator** for a single itemized bill, and it
+does one thing Splitwise can't:
+
+> **Divvy splits individual line items *unevenly*.** You add each item from the receipt,
+> pick exactly who shared it, and weight shares per person (someone can count as 2×).
+> Tax and tip are then allocated proportionally. Splitwise can only split an expense
+> evenly (or by fixed amounts/percentages of the *whole* bill) — it has no concept of
+> "Alice and Bob share the appetizer, everyone shares the pizza, and Carol counts double."
+
+So Divvy does the hard, uneven, receipt-level math, then **pushes the result into Splitwise
+as one correctly-divided expense** — it complements Splitwise rather than replacing it.
+
 ## Tech Stack
 
 - **Backend:** Python 3 + Flask, `requests` (Splitwise HTTP), `pytest`
