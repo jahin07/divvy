@@ -125,7 +125,10 @@ export function StepPeople({ people, onChange, error, onNext, onGroupIdChange }:
             <RadioCard
               name="Group"
               selected={importMode === 'group'}
-              onSelect={() => setImportMode('group')}
+              onSelect={() => {
+                setImportMode('group')
+                if (selectedGroupId) onGroupIdChange(parseInt(selectedGroupId, 10))
+              }}
             />
             <RadioCard
               name="Friends"
