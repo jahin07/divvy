@@ -50,12 +50,14 @@ def test_group_id_passthrough():
 
 
 def test_rounding_reconciliation_when_shares_undershoot_cost():
-    # 10.00 split 3 ways => 3.33 each, sums to 9.99; one cent must be added.
+    # 10.00 split 3 ways with each person getting 3.33 sums to 9.99 — one cent
+    # short of the total.  The reconciliation branch must add one cent to the
+    # largest owed share so the totals balance.
     result = make_result(
         breakdown={
             "A": {"pre_tax": 3.33, "tax": 0, "tip": 0, "total": 3.33},
             "B": {"pre_tax": 3.33, "tax": 0, "tip": 0, "total": 3.33},
-            "C": {"pre_tax": 3.34, "tax": 0, "tip": 0, "total": 3.34},
+            "C": {"pre_tax": 3.33, "tax": 0, "tip": 0, "total": 3.33},
         },
         total_paid=10.0,
         payee="A",
@@ -68,6 +70,10 @@ def test_rounding_reconciliation_when_shares_undershoot_cost():
     paid_cents = sum(round(float(u["paid_share"]) * 100) for u in payload["users"])
     assert owed_cents == 1000
     assert paid_cents == 1000
+    # Confirm the reconciliation actually ran: exactly one share was bumped to
+    # 3.34 while the other two remain at 3.33.
+    owed_shares = sorted(u["owed_share"] for u in payload["users"])
+    assert owed_shares == ["3.33", "3.33", "3.34"]
 
 
 def test_reconciliation_adjusts_largest_owed_share():
