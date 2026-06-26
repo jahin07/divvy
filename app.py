@@ -1,6 +1,8 @@
 import os
 from flask import Flask, request, jsonify, send_from_directory
 from bill_split import compute_split
+import splitwise_client as sw
+from splitwise_client import build_expense_payload, SplitwiseError
 
 DIST_DIR = os.path.join(os.path.dirname(__file__), 'static', 'dist')
 
@@ -59,6 +61,51 @@ def calculate():
 
     result = compute_split(shares, items, payee, tax, tip)
     return jsonify(result)
+
+
+@app.route('/api/splitwise/status', methods=['GET'])
+def splitwise_status():
+    try:
+        user = sw.get_current_user()
+        return jsonify({'configured': True, 'user': user})
+    except SplitwiseError:
+        return jsonify({'configured': False})
+
+
+@app.route('/api/splitwise/groups', methods=['GET'])
+def splitwise_groups():
+    try:
+        return jsonify({'groups': sw.get_groups()})
+    except SplitwiseError as e:
+        return jsonify({'error': e.message}), e.status
+
+
+@app.route('/api/splitwise/friends', methods=['GET'])
+def splitwise_friends():
+    try:
+        return jsonify({'friends': sw.get_friends()})
+    except SplitwiseError as e:
+        return jsonify({'error': e.message}), e.status
+
+
+@app.route('/api/splitwise/expense', methods=['POST'])
+def splitwise_expense():
+    data = request.get_json(silent=True) or {}
+    try:
+        payload = build_expense_payload(
+            result=data['result'],
+            payee=data['payee'],
+            mapping=data['mapping'],
+            group_id=data.get('groupId'),
+            description=data.get('description', 'Divvy split'),
+        )
+    except (KeyError, ValueError) as e:
+        return jsonify({'error': f'Invalid request: {e}'}), 400
+    try:
+        expense_id = sw.create_expense(payload)
+        return jsonify({'ok': True, 'expenseId': expense_id})
+    except SplitwiseError as e:
+        return jsonify({'error': e.message}), e.status
 
 
 @app.route('/', defaults={'path': ''})
