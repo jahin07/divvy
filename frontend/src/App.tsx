@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useWizard } from './hooks/useWizard'
 import { useCalculate } from './hooks/useCalculate'
@@ -18,6 +18,8 @@ const pageVariants = {
 export default function App() {
   const [state, dispatch] = useWizard()
   const { calculate, loading } = useCalculate()
+  const [splitwiseGroupId, setSplitwiseGroupId] = useState<number | null>(null)
+  void splitwiseGroupId // will be consumed by StepResults in Task 7
 
   const goToStep = useCallback(
     async (target: number) => {
@@ -151,6 +153,7 @@ export default function App() {
                 onChange={(people) => dispatch({ type: 'SET_PEOPLE', people })}
                 error={state.error}
                 onNext={() => goToStep(2)}
+                onGroupIdChange={setSplitwiseGroupId}
               />
             )}
             {state.step === 2 && (

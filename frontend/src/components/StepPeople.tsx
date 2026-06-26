@@ -1,18 +1,96 @@
-import type { Person } from '../types'
+import { useState, useEffect, type ChangeEvent } from 'react'
+import type { Person, SplitwiseGroup, SplitwiseUser } from '../types'
 import { Card } from './ui/Card'
 import { Input } from './ui/Input'
 import { Button } from './ui/Button'
 import { Stepper } from './ui/Stepper'
 import { ErrorMessage } from './ui/ErrorMessage'
+import { RadioCard } from './ui/RadioCard'
+import { ChipCheckbox } from './ui/ChipCheckbox'
+import { useSplitwise } from '../hooks/useSplitwise'
 
 interface StepPeopleProps {
   people: Person[]
   onChange: (people: Person[]) => void
   error: string | null
   onNext: () => void
+  onGroupIdChange: (id: number | null) => void
 }
 
-export function StepPeople({ people, onChange, error, onNext }: StepPeopleProps) {
+export function StepPeople({ people, onChange, error, onNext, onGroupIdChange }: StepPeopleProps) {
+  const { status, getGroups, getFriends } = useSplitwise()
+
+  const [importMode, setImportMode] = useState<'group' | 'friends'>('group')
+  const [groups, setGroups] = useState<SplitwiseGroup[]>([])
+  const [friends, setFriends] = useState<SplitwiseUser[]>([])
+  const [groupsLoaded, setGroupsLoaded] = useState(false)
+  const [friendsLoaded, setFriendsLoaded] = useState(false)
+  const [importLoading, setImportLoading] = useState(false)
+  const [importError, setImportError] = useState<string | null>(null)
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('')
+  const [selectedFriendIds, setSelectedFriendIds] = useState<Set<number>>(new Set())
+
+  useEffect(() => {
+    if (!status.configured) return
+    if (importMode === 'group' && !groupsLoaded) {
+      setImportLoading(true)
+      setImportError(null)
+      getGroups()
+        .then((g) => {
+          setGroups(g)
+          setGroupsLoaded(true)
+        })
+        .catch((e) => setImportError(e instanceof Error ? e.message : 'Failed to load groups'))
+        .finally(() => setImportLoading(false))
+    } else if (importMode === 'friends' && !friendsLoaded) {
+      setImportLoading(true)
+      setImportError(null)
+      getFriends()
+        .then((f) => {
+          setFriends(f)
+          setFriendsLoaded(true)
+        })
+        .catch((e) => setImportError(e instanceof Error ? e.message : 'Failed to load friends'))
+        .finally(() => setImportLoading(false))
+    }
+    // getGroups and getFriends are stable fetch wrappers; intentionally omitted from deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [importMode, status.configured, groupsLoaded, friendsLoaded])
+
+  const handleGroupSelect = (e: ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value
+    setSelectedGroupId(val)
+    const id = parseInt(val, 10)
+    if (isNaN(id)) {
+      onGroupIdChange(null)
+      return
+    }
+    const group = groups.find((g) => g.id === id)
+    if (!group) return
+    const newPeople: Person[] = group.members.map((m) => ({
+      name: m.name,
+      share: 1,
+      splitwiseId: m.id,
+    }))
+    onChange(newPeople)
+    onGroupIdChange(id)
+  }
+
+  const toggleFriend = (friend: SplitwiseUser) => {
+    const next = new Set(selectedFriendIds)
+    if (next.has(friend.id)) {
+      next.delete(friend.id)
+    } else {
+      next.add(friend.id)
+    }
+    setSelectedFriendIds(next)
+    const newPeople: Person[] = friends
+      .filter((f) => next.has(f.id))
+      .map((f) => ({ name: f.name, share: 1, splitwiseId: f.id }))
+    onChange(newPeople)
+    onGroupIdChange(null)
+  }
+
   const updatePerson = (index: number, field: keyof Person, value: string | number) => {
     const updated = people.map((p, i) => (i === index ? { ...p, [field]: value } : p))
     onChange(updated)
@@ -33,6 +111,73 @@ export function StepPeople({ people, onChange, error, onNext }: StepPeopleProps)
       title="Who's splitting?"
       description="Add everyone at the table. Adjust share weight for anyone paying a larger portion of shared items."
     >
+      {status.configured && (
+        <div className="mb-6 border border-border rounded-input p-4 bg-surface">
+          <p className="text-xs font-bold tracking-[0.15em] uppercase text-amber mb-3">
+            Import from Splitwise
+          </p>
+
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            <RadioCard
+              name="Group"
+              selected={importMode === 'group'}
+              onSelect={() => setImportMode('group')}
+            />
+            <RadioCard
+              name="Friends"
+              selected={importMode === 'friends'}
+              onSelect={() => setImportMode('friends')}
+            />
+          </div>
+
+          {importLoading && (
+            <p className="text-text-muted text-sm text-center py-2">Loading…</p>
+          )}
+
+          <ErrorMessage message={importError} />
+
+          {!importLoading && !importError && importMode === 'group' && (
+            <>
+              {groups.length === 0 ? (
+                <p className="text-text-muted text-sm">No groups found.</p>
+              ) : (
+                <select
+                  value={selectedGroupId}
+                  onChange={handleGroupSelect}
+                  className="w-full pl-3.5 pr-3.5 py-3 border border-border rounded-input text-sm font-medium text-text bg-surface outline-none transition-[border-color,box-shadow] duration-200 focus:border-border-focus focus:shadow-[0_0_0_3px_var(--color-amber-dim)]"
+                >
+                  <option value="">Select a group…</option>
+                  {groups.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </>
+          )}
+
+          {!importLoading && !importError && importMode === 'friends' && (
+            <>
+              {friends.length === 0 ? (
+                <p className="text-text-muted text-sm">No friends found.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {friends.map((f) => (
+                    <ChipCheckbox
+                      key={f.id}
+                      label={f.name}
+                      checked={selectedFriendIds.has(f.id)}
+                      onChange={() => toggleFriend(f)}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
       <div className="flex flex-col gap-3">
         {people.map((person, i) => (
           <div key={i} className="flex gap-4 items-center">
