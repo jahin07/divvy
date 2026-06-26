@@ -69,6 +69,8 @@ def splitwise_status():
         user = sw.get_current_user()
         return jsonify({'configured': True, 'user': user})
     except SplitwiseError:
+        # Treats any error (missing key OR Splitwise being unreachable) as
+        # "not configured". Acceptable for single-user use.
         return jsonify({'configured': False})
 
 
@@ -99,7 +101,7 @@ def splitwise_expense():
             group_id=data.get('groupId'),
             description=data.get('description', 'Divvy split'),
         )
-    except (KeyError, ValueError) as e:
+    except (KeyError, ValueError, TypeError, AttributeError) as e:
         return jsonify({'error': f'Invalid request: {e}'}), 400
     try:
         expense_id = sw.create_expense(payload)

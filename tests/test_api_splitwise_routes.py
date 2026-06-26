@@ -84,3 +84,26 @@ def test_expense_client_error(client, monkeypatch):
     resp = client.post("/api/splitwise/expense", json=body)
     assert resp.status_code == 400
     assert "error" in resp.get_json()
+
+
+def test_expense_missing_fields_returns_400(client):
+    resp = client.post("/api/splitwise/expense", json={})
+    assert resp.status_code == 400
+    assert "error" in resp.get_json()
+
+
+def test_expense_non_dict_result_returns_400(client):
+    resp = client.post("/api/splitwise/expense",
+                       json={"result": "oops", "payee": "A",
+                             "mapping": {"A": 1}, "groupId": None})
+    assert resp.status_code == 400
+    assert "error" in resp.get_json()
+
+
+def test_groups_error_passthrough(client, monkeypatch):
+    def boom():
+        raise sw.SplitwiseError("down", status=502)
+    monkeypatch.setattr(sw, "get_groups", boom)
+    resp = client.get("/api/splitwise/groups")
+    assert resp.status_code == 502
+    assert "error" in resp.get_json()
