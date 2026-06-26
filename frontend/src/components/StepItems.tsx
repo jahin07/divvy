@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useEffect } from 'react'
 import type { Person, Item } from '../types'
 import { Card } from './ui/Card'
 import { Input } from './ui/Input'
@@ -16,10 +16,8 @@ interface StepItemsProps {
 }
 
 export function StepItems({ people, items, onChange, error, onBack, onNext }: StepItemsProps) {
-  const nextId = useRef(items.length > 0 ? Math.max(...items.map((i) => i.id)) + 1 : 1)
-
   const addItem = () => {
-    const id = nextId.current++
+    const id = items.length > 0 ? Math.max(...items.map((i) => i.id)) + 1 : 1
     onChange([...items, { id, name: '', cost: '', participants: 'all' }])
   }
 
@@ -48,10 +46,17 @@ export function StepItems({ people, items, onChange, error, onBack, onNext }: St
     }
   }
 
-  // Auto-add first item if empty
+  // Ensure there's always at least one item row. Done in an effect (not during
+  // render) so it stays a pure render and isn't double-fired by StrictMode.
+  useEffect(() => {
+    if (items.length === 0) {
+      onChange([{ id: 1, name: '', cost: '', participants: 'all' }])
+    }
+    // onChange is recreated each render; the empty-guard prevents a loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items.length])
+
   if (items.length === 0) {
-    const id = nextId.current++
-    onChange([{ id, name: '', cost: '', participants: 'all' }])
     return null
   }
 
@@ -62,7 +67,7 @@ export function StepItems({ people, items, onChange, error, onBack, onNext }: St
       description="Add each item from the receipt. Choose who shared each one."
     >
       <div className="flex flex-col gap-3">
-        {items.map((item) => {
+        {items.map((item, index) => {
           const isAll = item.participants === 'all'
           return (
             <div
@@ -71,7 +76,7 @@ export function StepItems({ people, items, onChange, error, onBack, onNext }: St
             >
               <div className="flex justify-between items-center mb-4">
                 <span className="font-display text-base text-amber">
-                  Item {item.id}
+                  Item {index + 1}
                 </span>
                 <Button variant="danger" onClick={() => removeItem(item.id)} className="text-base">
                   &times;
