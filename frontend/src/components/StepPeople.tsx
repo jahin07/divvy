@@ -222,24 +222,25 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
                   )}
                   <Input
                     type="text"
-                    placeholder="Search friends…"
+                    placeholder="Search friends to add…"
                     value={friendSearch}
                     onChange={(e) => setFriendSearch(e.target.value)}
-                    className="mb-2"
                   />
-                  <div className="flex flex-wrap gap-2">
-                    {visibleFriends.map((f) => (
-                      <ChipCheckbox
-                        key={f.id}
-                        label={f.name}
-                        checked={selectedFriendIds.has(f.id)}
-                        onChange={() => toggleFriend(f)}
-                      />
+                  {friendSearch.trim() &&
+                    (visibleFriends.length === 0 ? (
+                      <p className="text-text-muted text-sm mt-2">No friends match “{friendSearch}”.</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {visibleFriends.map((f) => (
+                          <ChipCheckbox
+                            key={f.id}
+                            label={f.name}
+                            checked={selectedFriendIds.has(f.id)}
+                            onChange={() => toggleFriend(f)}
+                          />
+                        ))}
+                      </div>
                     ))}
-                  </div>
-                  {friendSearch.trim() && visibleFriends.length === 0 && (
-                    <p className="text-text-muted text-sm mt-2">No friends match “{friendSearch}”.</p>
-                  )}
                 </>
               )}
             </>
