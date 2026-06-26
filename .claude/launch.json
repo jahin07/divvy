@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Flask API",
+      "runtimeExecutable": "/Users/jahinmajumdar/projects/splitwise-new/venv/bin/python",
+      "runtimeArgs": ["app.py"],
+      "port": 5001,
+      "autoPort": false
+    },
+    {
+      "name": "Vite Frontend",
+      "runtimeExecutable": "/usr/local/bin/node",
+      "runtimeArgs": ["frontend/node_modules/.bin/vite", "--config", "frontend/vite.config.ts", "frontend"],
+      "port": 5173
+    }
+  ]
+}

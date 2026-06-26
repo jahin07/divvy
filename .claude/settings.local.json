@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(source:*)",
+      "Bash(npm create:*)",
+      "Bash(npm install:*)",
+      "Bash(sudo chown:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx vite:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(lsof -i :5000 -sTCP:LISTEN)",
+      "Read(//usr/local/lib/node_modules/npm/bin/**)",
+      "Read(//opt/homebrew/bin/**)",
+      "Bash(command -v fnm)",
+      "Bash(command -v nvm)",
+      "Read(//Users/jahinmajumdar/projects/splitwise-new/$HOME/.nvm/versions/node/*/bin/**)",
+      "Read(//usr/local/bin/**)",
+      "Bash(ipconfig getifaddr:*)",
+      "Bash(/usr/local/bin/npm install:*)",
+      "Bash(PATH=\"/usr/local/bin:$PATH\" cd /Users/jahinmajumdar/projects/splitwise-new/frontend)",
+      "Bash(export PATH=\"/usr/local/bin:$PATH\")",
+      "Bash(curl -k -s -o /dev/null -w \"%{http_code}\" https://localhost:5173/)",
+      "Bash(/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate)",
+      "Bash(lsof -i :5173 -sTCP:LISTEN)"
+    ]
+  }
+}
