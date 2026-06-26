@@ -30,6 +30,14 @@ export function StepPeople({ people, onChange, error, onNext, onGroupIdChange }:
   const [selectedGroupId, setSelectedGroupId] = useState<string>('')
   const [selectedFriendIds, setSelectedFriendIds] = useState<Set<number>>(new Set())
 
+  // The current Splitwise user. The friends endpoint never returns yourself, so
+  // include "me" automatically in friends-based splits (you're virtually always
+  // part of a bill you're splitting, and usually the payer).
+  const me: SplitwiseUser | null =
+    status.configured && status.user
+      ? { id: status.user.id, name: status.user.first_name || 'You' }
+      : null
+
   useEffect(() => {
     setImportError(null)
   }, [importMode])
@@ -88,9 +96,12 @@ export function StepPeople({ people, onChange, error, onNext, onGroupIdChange }:
       next.add(friend.id)
     }
     setSelectedFriendIds(next)
-    const newPeople: Person[] = friends
+    const selectedFriends: Person[] = friends
       .filter((f) => next.has(f.id))
       .map((f) => ({ name: f.name, share: 1, splitwiseId: f.id }))
+    const newPeople: Person[] = me
+      ? [{ name: me.name, share: 1, splitwiseId: me.id }, ...selectedFriends]
+      : selectedFriends
     onChange(newPeople)
     onGroupIdChange(null)
   }
@@ -169,16 +180,23 @@ export function StepPeople({ people, onChange, error, onNext, onGroupIdChange }:
               {friendsLoaded && friends.length === 0 ? (
                 <p className="text-text-muted text-sm">No friends found.</p>
               ) : (
-                <div className="flex flex-wrap gap-2">
-                  {friends.map((f) => (
-                    <ChipCheckbox
-                      key={f.id}
-                      label={f.name}
-                      checked={selectedFriendIds.has(f.id)}
-                      onChange={() => toggleFriend(f)}
-                    />
-                  ))}
-                </div>
+                <>
+                  {me && (
+                    <p className="text-text-muted text-xs mb-2">
+                      {me.name} (you) is included automatically.
+                    </p>
+                  )}
+                  <div className="flex flex-wrap gap-2">
+                    {friends.map((f) => (
+                      <ChipCheckbox
+                        key={f.id}
+                        label={f.name}
+                        checked={selectedFriendIds.has(f.id)}
+                        onChange={() => toggleFriend(f)}
+                      />
+                    ))}
+                  </div>
+                </>
               )}
             </>
           )}
