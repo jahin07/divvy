@@ -69,7 +69,9 @@ body::after {
 }
 @media (max-width: 768px) {
   :root {
-    --status-bar-h: max(env(safe-area-inset-top, 0px), 50px);
+    /* Floor covers Dynamic Island phones (~59px) when the real inset reads 0;
+       when the inset is reported (true standalone), the exact value wins. */
+    --status-bar-h: max(env(safe-area-inset-top, 0px), 59px);
   }
 }
 
