@@ -32,6 +32,9 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
   const [importError, setImportError] = useState<string | null>(null)
   const [selectedGroupId, setSelectedGroupId] = useState<string>('')
   const [selectedFriendIds, setSelectedFriendIds] = useState<Set<number>>(new Set())
+  // Whether "you" are part of the split. Defaults on (the friends endpoint never
+  // returns yourself), but removing yourself via the × must stick.
+  const [includeMe, setIncludeMe] = useState(true)
   const [groupSearch, setGroupSearch] = useState('')
   const [friendSearch, setFriendSearch] = useState('')
 
@@ -104,6 +107,21 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
     onGroupIdChange(id)
   }
 
+  // Re-derive the people roster from the friends selection: you (unless removed)
+  // + the selected friends + any manually-added names. Existing share weights are
+  // carried over. This is the single source of truth, so a friend removed via the
+  // × (which also drops them from the selection) can never be silently re-added.
+  const buildFriendPeople = (ids: Set<number>, withMe: boolean): Person[] => {
+    const shareOf = (id: number) => people.find((p) => p.splitwiseId === id)?.share ?? 1
+    const mePerson: Person[] =
+      withMe && me ? [{ name: me.name, share: shareOf(me.id), splitwiseId: me.id }] : []
+    const friendPeople: Person[] = friends
+      .filter((f) => ids.has(f.id))
+      .map((f) => ({ name: f.name, share: shareOf(f.id), splitwiseId: f.id }))
+    const manual = people.filter((p) => p.splitwiseId == null && p.name.trim() !== '')
+    return [...mePerson, ...friendPeople, ...manual]
+  }
+
   const toggleFriend = (friend: SplitwiseUser) => {
     const next = new Set(selectedFriendIds)
     if (next.has(friend.id)) {
@@ -115,13 +133,7 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
     // Clear the search box after a pick so the next friend can be typed
     // without having to backspace the previous query first.
     setFriendSearch('')
-    const selectedFriends: Person[] = friends
-      .filter((f) => next.has(f.id))
-      .map((f) => ({ name: f.name, share: 1, splitwiseId: f.id }))
-    const newPeople: Person[] = me
-      ? [{ name: me.name, share: 1, splitwiseId: me.id }, ...selectedFriends]
-      : selectedFriends
-    onChange(newPeople)
+    onChange(buildFriendPeople(next, includeMe))
     onGroupIdChange(null)
   }
 
@@ -136,6 +148,18 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
 
   const removePerson = (index: number) => {
     if (people.length <= 2) return
+    // Keep the Splitwise selection in sync so a removed person isn't re-added on
+    // the next pick. Removing yourself sticks via the includeMe flag.
+    const removed = people[index]
+    if (removed?.splitwiseId != null) {
+      if (me && removed.splitwiseId === me.id) {
+        setIncludeMe(false)
+      } else {
+        const next = new Set(selectedFriendIds)
+        next.delete(removed.splitwiseId)
+        setSelectedFriendIds(next)
+      }
+    }
     onChange(people.filter((_, i) => i !== index))
   }
 
@@ -240,7 +264,7 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
                 <p className="text-text-muted text-sm">No friends found.</p>
               ) : (
                 <>
-                  {me && (
+                  {me && includeMe && (
                     <p className="text-text-muted text-xs mb-2">
                       {me.name} (you) is included automatically.
                     </p>
