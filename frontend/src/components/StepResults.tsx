@@ -130,17 +130,17 @@ export function StepResults({ results, error, loading, onBack, onReset, people, 
           ) : (
             <>
               <ErrorMessage message={pushError} />
-              <div className="flex flex-col items-center gap-2 mt-2">
+              <div className="flex flex-col gap-2 mt-2">
                 <Button
-                  variant="ghost"
+                  variant="primary"
                   onClick={() => void handlePush()}
                   disabled={!canPush || pushing}
-                  className="disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-full py-3.5 text-base rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   {pushing ? 'Adding…' : 'Push to Splitwise'}
                 </Button>
                 {!canPush && (
-                  <p className="text-xs text-text-muted">
+                  <p className="text-xs text-text-muted text-center">
                     Import people from Splitwise to enable
                   </p>
                 )}

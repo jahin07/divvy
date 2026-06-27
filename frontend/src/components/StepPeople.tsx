@@ -273,7 +273,10 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
       </label>
       <div className="flex flex-col gap-3">
         {people.map((person, i) => (
-          <div key={i} className="flex gap-3 items-center">
+          <div key={i} className="flex gap-2.5 items-center">
+            <div className="w-9 h-9 rounded-full bg-amber-dim text-amber flex items-center justify-center text-sm font-bold flex-shrink-0 uppercase select-none">
+              {person.name.trim().charAt(0) || '?'}
+            </div>
             <Input
               type="text"
               placeholder="Name"
