@@ -14,7 +14,7 @@ WORKDIR /app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app.py bill_split.py splitwise_client.py ./
+COPY app.py bill_split.py splitwise_client.py receipt_scan.py ./
 COPY --from=frontend /app/static/dist ./static/dist
 
 # Render (and most hosts) inject $PORT; default to 8000 for local `docker run`.
