@@ -329,13 +329,17 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
         </div>
       )}
       <ErrorMessage message={error} />
-      <Button
-        variant="primary"
-        onClick={onNext}
-        className="w-full mt-8 py-3.5 text-base rounded-full"
-      >
-        Continue
-      </Button>
+      {/* Nothing to continue with until there are at least two people, so hide
+          the CTA until then (e.g. before any friend is added). */}
+      {people.length >= 2 && (
+        <Button
+          variant="primary"
+          onClick={onNext}
+          className="w-full mt-8 py-3.5 text-base rounded-full"
+        >
+          Continue
+        </Button>
+      )}
     </Card>
   )
 }
