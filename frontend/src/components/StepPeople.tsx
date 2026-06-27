@@ -56,6 +56,20 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
     setImportError(null)
   }, [importMode])
 
+  // When Splitwise is connected, people are added via "+ Add a friend", so the
+  // two pristine placeholder rows (the no-key local-splitter default) are just
+  // clutter — clear them once, leaving an empty list to fill from search. Only
+  // the untouched default is cleared; anything the user typed is left alone.
+  useEffect(() => {
+    if (!status.configured) return
+    const pristine =
+      people.length === 2 &&
+      people.every((p) => p.splitwiseId == null && p.name.trim() === '')
+    if (pristine) onChange([])
+    // Runs when the configured status resolves; people/onChange intentionally omitted.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status.configured])
+
   useEffect(() => {
     if (!status.configured || !importOpen) return
     if (importMode === 'group' && !groupsLoaded) {
@@ -170,6 +184,11 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
         People
       </label>
       <div className="flex flex-col gap-3">
+        {people.length === 0 && (
+          <p className="text-text-muted text-sm py-1">
+            No one added yet — use “Add a friend” below.
+          </p>
+        )}
         {people.map((person, i) => (
           <div key={i} className="flex gap-2.5 items-center">
             <div className="w-9 h-9 rounded-full bg-amber-dim text-amber flex items-center justify-center text-sm font-bold flex-shrink-0 uppercase select-none">
