@@ -106,3 +106,15 @@ input::-webkit-inner-spin-button {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.12);
 }
+
+/* iOS Safari auto-zooms when focusing a form field whose font-size is < 16px,
+   which then shifts the layout sideways. Force 16px on small screens so the
+   zoom never triggers. !important is needed to override Tailwind's text-sm
+   utility on these elements; desktop keeps its smaller sizing above 480px. */
+@media (max-width: 480px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
