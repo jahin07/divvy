@@ -58,35 +58,40 @@ body::after {
   z-index: 9999;
 }
 
-/* Push the whole app below the device safe area (notch / status bar). Kept in
-   plain CSS so the calc() spacing around `+` stays valid. */
-.app-shell {
-  padding-top: calc(2.5rem + env(safe-area-inset-top, 0px));
+/* Height of the strip reserved/blurred for the device status bar. On a desktop
+   browser there's no status bar, so it's 0. On phones the OS status bar overlays
+   the web content while scrolling, yet iOS Safari frequently reports a 0
+   safe-area inset — so guarantee a cover height there. Width-based rather than
+   display-mode based because the overlap happens in plain Safari tabs too, not
+   just installed PWAs. */
+:root {
+  --status-bar-h: env(safe-area-inset-top, 0px);
+}
+@media (max-width: 768px) {
+  :root {
+    --status-bar-h: max(env(safe-area-inset-top, 0px), 50px);
+  }
 }
 
-/* Frosted overlay sitting behind the device status bar. Blurs whatever page
-   content scrolls under the notch/time/battery so they don't visually collide. */
+/* Push the whole app clear of the status bar at rest. */
+.app-shell {
+  padding-top: calc(1.5rem + var(--status-bar-h));
+}
+
+/* Frosted overlay pinned over the status bar zone. Blurs/darkens whatever page
+   content scrolls underneath so it doesn't visually collide with the OS clock,
+   signal and battery (which iOS paints on top and stay sharp). */
 .safe-area-blur {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: env(safe-area-inset-top, 0px);
+  height: var(--status-bar-h);
   z-index: 50;
   pointer-events: none;
   background: rgba(14, 14, 17, 0.72);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-}
-
-/* When installed to the home screen / running full-screen, the web content
-   sits under the status bar. Guarantee the blur bar covers it even if the
-   reported inset is 0 (some iOS webviews report nothing). Stays invisible in a
-   normal desktop browser tab, which reports display-mode: browser. */
-@media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
-  .safe-area-blur {
-    height: max(env(safe-area-inset-top, 0px), 44px);
-  }
 }
 
 /* Ambient glow orbs */

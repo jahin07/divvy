@@ -44,10 +44,6 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
   const visibleFriends = friends.filter((f) =>
     f.name.toLowerCase().includes(friendSearch.trim().toLowerCase()),
   )
-  // Friends already added, pinned regardless of the search box (which clears
-  // after each pick). Search results exclude these so they aren't shown twice.
-  const pickedFriends = friends.filter((f) => selectedFriendIds.has(f.id))
-  const unpickedMatches = visibleFriends.filter((f) => !selectedFriendIds.has(f.id))
 
   // The current Splitwise user. The friends endpoint never returns yourself, so
   // include "me" automatically in friends-based splits (you're virtually always
@@ -275,37 +271,24 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
                     value={friendSearch}
                     onChange={(e) => setFriendSearch(e.target.value)}
                   />
-                  {/* Already-added friends stay pinned here so you keep a running
-                      list and can tap to remove someone, even though the search
-                      box clears after every pick. */}
-                  {pickedFriends.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {pickedFriends.map((f) => (
-                        <ChipCheckbox
-                          key={f.id}
-                          label={f.name}
-                          checked
-                          onChange={() => toggleFriend(f)}
-                        />
-                      ))}
-                    </div>
-                  )}
-                  {/* Matches for the current query that haven't been added yet. */}
-                  {friendSearch.trim() && unpickedMatches.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {unpickedMatches.map((f) => (
-                        <ChipCheckbox
-                          key={f.id}
-                          label={f.name}
-                          checked={false}
-                          onChange={() => toggleFriend(f)}
-                        />
-                      ))}
-                    </div>
-                  )}
-                  {friendSearch.trim() && visibleFriends.length === 0 && (
-                    <p className="text-text-muted text-sm mt-2">No friends match “{friendSearch}”.</p>
-                  )}
+                  {/* Matches show only while searching. After a pick the box
+                      clears and the person appears in the People list below — no
+                      need to also pin them here. */}
+                  {friendSearch.trim() &&
+                    (visibleFriends.length === 0 ? (
+                      <p className="text-text-muted text-sm mt-2">No friends match “{friendSearch}”.</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {visibleFriends.map((f) => (
+                          <ChipCheckbox
+                            key={f.id}
+                            label={f.name}
+                            checked={selectedFriendIds.has(f.id)}
+                            onChange={() => toggleFriend(f)}
+                          />
+                        ))}
+                      </div>
+                    ))}
                 </>
               )}
             </>
