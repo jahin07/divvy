@@ -23,7 +23,7 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
   const { status, getGroups, getFriends } = useSplitwise()
 
   const [importOpen, setImportOpen] = useState(false)
-  const [importMode, setImportMode] = useState<'group' | 'friends'>('group')
+  const [importMode, setImportMode] = useState<'group' | 'friends'>('friends')
   const [groups, setGroups] = useState<SplitwiseGroup[]>([])
   const [friends, setFriends] = useState<SplitwiseUser[]>([])
   const [groupsLoaded, setGroupsLoaded] = useState(false)
@@ -31,7 +31,6 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
   const [importLoading, setImportLoading] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
   const [selectedGroupId, setSelectedGroupId] = useState<string>('')
-  const [selectedFriendIds, setSelectedFriendIds] = useState<Set<number>>(new Set())
   // Whether "you" are part of the split. Defaults on (the friends endpoint never
   // returns yourself), but removing yourself via the × must stick.
   const [includeMe, setIncludeMe] = useState(true)
@@ -103,34 +102,33 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
     onGroupIdChange(id)
   }
 
-  // Re-derive the people roster from the friends selection: you (unless removed)
-  // + the selected friends + any manually-added names. Existing share weights are
-  // carried over. This is the single source of truth, so a friend removed via the
-  // × (which also drops them from the selection) can never be silently re-added.
-  const buildFriendPeople = (ids: Set<number>, withMe: boolean): Person[] => {
-    const shareOf = (id: number) => people.find((p) => p.splitwiseId === id)?.share ?? 1
-    const mePerson: Person[] =
-      withMe && me ? [{ name: me.name, share: shareOf(me.id), splitwiseId: me.id }] : []
-    const friendPeople: Person[] = friends
-      .filter((f) => ids.has(f.id))
-      .map((f) => ({ name: f.name, share: shareOf(f.id), splitwiseId: f.id }))
-    const manual = people.filter((p) => p.splitwiseId == null && p.name.trim() !== '')
-    return [...mePerson, ...friendPeople, ...manual]
-  }
+  // Which Splitwise ids are currently in the roster. Derived from `people` (the
+  // persisted wizard state) rather than a separate piece of component state, so
+  // navigating away from this step and back — which unmounts/remounts and would
+  // reset local state — can't drop already-added people.
+  const selectedFriendIds = new Set(
+    people.filter((p) => p.splitwiseId != null).map((p) => p.splitwiseId as number),
+  )
 
   const toggleFriend = (friend: SplitwiseUser) => {
-    const next = new Set(selectedFriendIds)
-    if (next.has(friend.id)) {
-      next.delete(friend.id)
-    } else {
-      next.add(friend.id)
-    }
-    setSelectedFriendIds(next)
     // Clear the search box after a pick so the next friend can be typed
     // without having to backspace the previous query first.
     setFriendSearch('')
-    onChange(buildFriendPeople(next, includeMe))
     onGroupIdChange(null)
+
+    if (selectedFriendIds.has(friend.id)) {
+      onChange(people.filter((p) => p.splitwiseId !== friend.id))
+      return
+    }
+    // Adding: drop the empty placeholder rows but keep every real person, then
+    // append "you" (first friend only, unless explicitly removed) and the friend.
+    const base = people.filter((p) => p.splitwiseId != null || p.name.trim() !== '')
+    const additions: Person[] = []
+    if (me && includeMe && !base.some((p) => p.splitwiseId === me.id)) {
+      additions.push({ name: me.name, share: 1, splitwiseId: me.id })
+    }
+    additions.push({ name: friend.name, share: 1, splitwiseId: friend.id })
+    onChange([...base, ...additions])
   }
 
   const updatePerson = (index: number, field: keyof Person, value: string | number) => {
@@ -138,23 +136,14 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
     onChange(updated)
   }
 
-  const addPerson = () => {
-    onChange([...people, { name: '', share: 1 }])
-  }
-
   const removePerson = (index: number) => {
     if (people.length <= 2) return
-    // Keep the Splitwise selection in sync so a removed person isn't re-added on
-    // the next pick. Removing yourself sticks via the includeMe flag.
+    // Selection is derived from `people`, so removal updates it automatically.
+    // Removing yourself must stick, though: flag it so the next pick won't re-add
+    // you (you're otherwise auto-included on the first friend).
     const removed = people[index]
-    if (removed?.splitwiseId != null) {
-      if (me && removed.splitwiseId === me.id) {
-        setIncludeMe(false)
-      } else {
-        const next = new Set(selectedFriendIds)
-        next.delete(removed.splitwiseId)
-        setSelectedFriendIds(next)
-      }
+    if (me && removed?.splitwiseId === me.id) {
+      setIncludeMe(false)
     }
     onChange(people.filter((_, i) => i !== index))
   }
@@ -176,127 +165,6 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
           onChange={(e) => onTitleChange(e.target.value)}
         />
       </div>
-
-      {status.configured && (
-        <div className="mb-7">
-          <button
-            type="button"
-            onClick={() => setImportOpen((o) => !o)}
-            className="w-full flex items-center justify-between px-4 py-3 border border-border rounded-input bg-surface text-left transition-colors duration-200 hover:border-white/12"
-          >
-            <span className="text-xs font-bold tracking-[0.15em] uppercase text-amber">
-              Import from Splitwise
-            </span>
-            <svg
-              className={`w-4 h-4 text-text-muted transition-transform duration-200 ${importOpen ? 'rotate-180' : ''}`}
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-            >
-              <path d="M4 6l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-
-          {importOpen && (
-            <div className="mt-2 border border-border rounded-input p-4 bg-surface">
-              <div className="grid grid-cols-2 gap-2 mb-4">
-            <RadioCard
-              name="Group"
-              selected={importMode === 'group'}
-              onSelect={() => {
-                setImportMode('group')
-                if (selectedGroupId) onGroupIdChange(parseInt(selectedGroupId, 10))
-              }}
-            />
-            <RadioCard
-              name="Friends"
-              selected={importMode === 'friends'}
-              onSelect={() => { setImportMode('friends'); onGroupIdChange(null) }}
-            />
-          </div>
-
-          {importLoading && (
-            <p className="text-text-muted text-sm text-center py-2">Loading…</p>
-          )}
-
-          <ErrorMessage message={importError} />
-
-          {!importLoading && !importError && importMode === 'group' && (
-            <>
-              {groupsLoaded && groups.length === 0 ? (
-                <p className="text-text-muted text-sm">No groups found.</p>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  <Input
-                    type="text"
-                    placeholder="Search groups…"
-                    value={groupSearch}
-                    onChange={(e) => setGroupSearch(e.target.value)}
-                  />
-                  <select
-                    value={selectedGroupId}
-                    onChange={handleGroupSelect}
-                    className="w-full pl-3.5 pr-3.5 py-3 border border-border rounded-input text-sm font-medium text-text bg-surface outline-none transition-[border-color,box-shadow] duration-200 focus:border-border-focus focus:shadow-[0_0_0_3px_var(--color-amber-dim)]"
-                  >
-                    <option value="">Select a group…</option>
-                    {visibleGroups.map((g) => (
-                      <option key={g.id} value={g.id}>
-                        {g.name}
-                      </option>
-                    ))}
-                  </select>
-                  {groupSearch.trim() && visibleGroups.length === 0 && (
-                    <p className="text-text-muted text-sm">No groups match “{groupSearch}”.</p>
-                  )}
-                </div>
-              )}
-            </>
-          )}
-
-          {!importLoading && !importError && importMode === 'friends' && (
-            <>
-              {friendsLoaded && friends.length === 0 ? (
-                <p className="text-text-muted text-sm">No friends found.</p>
-              ) : (
-                <>
-                  {me && includeMe && (
-                    <p className="text-text-muted text-xs mb-2">
-                      {me.name} (you) is included automatically.
-                    </p>
-                  )}
-                  <Input
-                    type="text"
-                    placeholder="Search friends to add…"
-                    value={friendSearch}
-                    onChange={(e) => setFriendSearch(e.target.value)}
-                  />
-                  {/* Matches show only while searching. After a pick the box
-                      clears and the person appears in the People list below — no
-                      need to also pin them here. */}
-                  {friendSearch.trim() &&
-                    (visibleFriends.length === 0 ? (
-                      <p className="text-text-muted text-sm mt-2">No friends match “{friendSearch}”.</p>
-                    ) : (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {visibleFriends.map((f) => (
-                          <ChipCheckbox
-                            key={f.id}
-                            label={f.name}
-                            checked={selectedFriendIds.has(f.id)}
-                            onChange={() => toggleFriend(f)}
-                          />
-                        ))}
-                      </div>
-                    ))}
-                </>
-              )}
-            </>
-          )}
-            </div>
-          )}
-        </div>
-      )}
 
       <label className="block text-xs font-bold tracking-[0.12em] uppercase text-text-secondary mb-3.5">
         People
@@ -330,9 +198,114 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
           </div>
         ))}
       </div>
-      <Button variant="add" onClick={addPerson} className="mt-4">
-        + Add another person
-      </Button>
+      {status.configured && (
+        <div className="mt-4">
+          <Button variant="add" onClick={() => setImportOpen((o) => !o)}>
+            + Add a friend
+          </Button>
+
+          {importOpen && (
+            <div className="mt-2 border border-border rounded-input p-4 bg-surface">
+              {/* Friends is the primary way to add people; Group is a bulk option. */}
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                <RadioCard
+                  name="Friends"
+                  selected={importMode === 'friends'}
+                  onSelect={() => {
+                    setImportMode('friends')
+                    onGroupIdChange(null)
+                  }}
+                />
+                <RadioCard
+                  name="Group"
+                  selected={importMode === 'group'}
+                  onSelect={() => {
+                    setImportMode('group')
+                    if (selectedGroupId) onGroupIdChange(parseInt(selectedGroupId, 10))
+                  }}
+                />
+              </div>
+
+              {importLoading && (
+                <p className="text-text-muted text-sm text-center py-2">Loading…</p>
+              )}
+
+              <ErrorMessage message={importError} />
+
+              {!importLoading && !importError && importMode === 'group' && (
+                <>
+                  {groupsLoaded && groups.length === 0 ? (
+                    <p className="text-text-muted text-sm">No groups found.</p>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <Input
+                        type="text"
+                        placeholder="Search groups…"
+                        value={groupSearch}
+                        onChange={(e) => setGroupSearch(e.target.value)}
+                      />
+                      <select
+                        value={selectedGroupId}
+                        onChange={handleGroupSelect}
+                        className="w-full pl-3.5 pr-3.5 py-3 border border-border rounded-input text-sm font-medium text-text bg-surface outline-none transition-[border-color,box-shadow] duration-200 focus:border-border-focus focus:shadow-[0_0_0_3px_var(--color-amber-dim)]"
+                      >
+                        <option value="">Select a group…</option>
+                        {visibleGroups.map((g) => (
+                          <option key={g.id} value={g.id}>
+                            {g.name}
+                          </option>
+                        ))}
+                      </select>
+                      {groupSearch.trim() && visibleGroups.length === 0 && (
+                        <p className="text-text-muted text-sm">No groups match “{groupSearch}”.</p>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {!importLoading && !importError && importMode === 'friends' && (
+                <>
+                  {friendsLoaded && friends.length === 0 ? (
+                    <p className="text-text-muted text-sm">No friends found.</p>
+                  ) : (
+                    <>
+                      {me && includeMe && (
+                        <p className="text-text-muted text-xs mb-2">
+                          {me.name} (you) is included automatically.
+                        </p>
+                      )}
+                      <Input
+                        type="text"
+                        placeholder="Search friends to add…"
+                        value={friendSearch}
+                        onChange={(e) => setFriendSearch(e.target.value)}
+                      />
+                      {/* Matches show only while searching. After a pick the box
+                          clears and the person appears in the People list above. */}
+                      {friendSearch.trim() &&
+                        (visibleFriends.length === 0 ? (
+                          <p className="text-text-muted text-sm mt-2">No friends match “{friendSearch}”.</p>
+                        ) : (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {visibleFriends.map((f) => (
+                              <ChipCheckbox
+                                key={f.id}
+                                label={f.name}
+                                checked={selectedFriendIds.has(f.id)}
+                                onChange={() => toggleFriend(f)}
+                              />
+                            ))}
+                          </div>
+                        ))}
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
       <ErrorMessage message={error} />
       <Button
         variant="primary"
