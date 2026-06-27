@@ -120,11 +120,11 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col overflow-x-hidden">
+    <div className="min-h-screen w-full flex flex-col justify-center overflow-x-hidden">
       <div className="glow glow-1" />
       <div className="glow glow-2" />
 
-      <div className="m-auto w-full max-w-2xl px-8 py-10 relative z-10 max-[480px]:px-4 max-[480px]:py-7">
+      <div className="mx-auto w-full max-w-2xl px-8 py-10 relative z-10 max-[480px]:px-4 max-[480px]:py-7">
         {/* Header */}
         <div className="text-center mb-10 max-[480px]:mb-7">
           <h1 className="font-display text-[2.5rem] tracking-[-0.02em] bg-gradient-to-br from-amber to-[#f0c96e] bg-clip-text text-transparent mb-1 max-[480px]:text-[2rem]">

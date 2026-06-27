@@ -273,7 +273,7 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
       </label>
       <div className="flex flex-col gap-3">
         {people.map((person, i) => (
-          <div key={i} className="flex gap-2.5 items-center">
+          <div key={i} className="flex gap-3 items-center">
             <Input
               type="text"
               placeholder="Name"
@@ -302,7 +302,7 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
       </Button>
       <ErrorMessage message={error} />
       <div className="flex justify-end mt-7">
-        <Button variant="primary" onClick={onNext} className="max-[480px]:w-full">
+        <Button variant="primary" onClick={onNext} className="px-8">
           Continue
         </Button>
       </div>
