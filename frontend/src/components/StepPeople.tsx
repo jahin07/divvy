@@ -22,6 +22,7 @@ interface StepPeopleProps {
 export function StepPeople({ title, onTitleChange, people, onChange, error, onNext, onGroupIdChange }: StepPeopleProps) {
   const { status, getGroups, getFriends } = useSplitwise()
 
+  const [importOpen, setImportOpen] = useState(false)
   const [importMode, setImportMode] = useState<'group' | 'friends'>('group')
   const [groups, setGroups] = useState<SplitwiseGroup[]>([])
   const [friends, setFriends] = useState<SplitwiseUser[]>([])
@@ -54,7 +55,7 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
   }, [importMode])
 
   useEffect(() => {
-    if (!status.configured) return
+    if (!status.configured || !importOpen) return
     if (importMode === 'group' && !groupsLoaded) {
       setImportLoading(true)
       setImportError(null)
@@ -78,7 +79,7 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
     }
     // getGroups and getFriends are stable fetch wrappers; intentionally omitted from deps
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [importMode, status.configured, groupsLoaded, friendsLoaded])
+  }, [importMode, status.configured, importOpen, groupsLoaded, friendsLoaded])
 
   const handleGroupSelect = (e: ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value
@@ -150,12 +151,29 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
       </div>
 
       {status.configured && (
-        <div className="mb-6 border border-border rounded-input p-4 bg-surface">
-          <p className="text-xs font-bold tracking-[0.15em] uppercase text-amber mb-3">
-            Import from Splitwise
-          </p>
+        <div className="mb-6">
+          <button
+            type="button"
+            onClick={() => setImportOpen((o) => !o)}
+            className="w-full flex items-center justify-between px-4 py-3 border border-border rounded-input bg-surface text-left transition-colors duration-200 hover:border-white/12"
+          >
+            <span className="text-xs font-bold tracking-[0.15em] uppercase text-amber">
+              Import from Splitwise
+            </span>
+            <svg
+              className={`w-4 h-4 text-text-muted transition-transform duration-200 ${importOpen ? 'rotate-180' : ''}`}
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            >
+              <path d="M4 6l4 4 4-4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
 
-          <div className="grid grid-cols-2 gap-2 mb-4">
+          {importOpen && (
+            <div className="mt-2 border border-border rounded-input p-4 bg-surface">
+              <div className="grid grid-cols-2 gap-2 mb-4">
             <RadioCard
               name="Group"
               selected={importMode === 'group'}
@@ -244,6 +262,8 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
                 </>
               )}
             </>
+          )}
+            </div>
           )}
         </div>
       )}
