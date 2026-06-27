@@ -138,7 +138,7 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
       description="Add everyone at the table. Adjust share weight for anyone paying a larger portion of shared items."
     >
       <div className="mb-6">
-        <label className="block text-xs font-bold tracking-[0.15em] uppercase text-text-muted mb-2">
+        <label className="block text-xs font-bold tracking-[0.12em] uppercase text-text-secondary mb-2">
           Bill title
         </label>
         <Input
@@ -248,6 +248,9 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
         </div>
       )}
 
+      <label className="block text-xs font-bold tracking-[0.12em] uppercase text-text-secondary mb-3">
+        People
+      </label>
       <div className="flex flex-col gap-3">
         {people.map((person, i) => (
           <div key={i} className="flex gap-2.5 items-center">
@@ -278,9 +281,8 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
         + Add another person
       </Button>
       <ErrorMessage message={error} />
-      <div className="flex justify-between mt-7 gap-2.5">
-        <span />
-        <Button variant="primary" onClick={onNext}>
+      <div className="flex justify-end mt-7">
+        <Button variant="primary" onClick={onNext} className="max-[480px]:w-full">
           Continue
         </Button>
       </div>
