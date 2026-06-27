@@ -58,6 +58,22 @@ body::after {
   z-index: 9999;
 }
 
+/* Frosted overlay sitting behind the device status bar. Blurs whatever page
+   content scrolls under the notch/time/battery so they don't visually collide.
+   Height collapses to 0 on devices without a safe-area inset. */
+.safe-area-blur {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top);
+  z-index: 50;
+  pointer-events: none;
+  background: rgba(14, 14, 17, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
 /* Ambient glow orbs */
 .glow {
   position: fixed;

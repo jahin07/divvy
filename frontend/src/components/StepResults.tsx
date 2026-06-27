@@ -154,8 +154,12 @@ export function StepResults({ results, error, loading, onBack, onReset, people, 
         <Button variant="ghost" onClick={onBack}>
           Back
         </Button>
-        <Button variant="primary" onClick={onReset}>
-          New Split
+        <Button
+          variant="ghost"
+          onClick={onReset}
+          className="border-amber/40 text-amber font-semibold hover:bg-amber-dim hover:border-amber hover:text-amber"
+        >
+          + New Split
         </Button>
       </div>
     </Card>
