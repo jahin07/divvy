@@ -250,13 +250,13 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
 
       <div className="flex flex-col gap-3">
         {people.map((person, i) => (
-          <div key={i} className="flex gap-4 items-center">
+          <div key={i} className="flex gap-2.5 items-center">
             <Input
               type="text"
               placeholder="Name"
               value={person.name}
               onChange={(e) => updatePerson(i, 'name', e.target.value)}
-              className="flex-[2]"
+              className="flex-[2] min-w-0"
               autoFocus={i === 0}
             />
             <Stepper

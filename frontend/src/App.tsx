@@ -120,7 +120,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen w-full flex justify-center">
+    <div className="min-h-screen w-full flex justify-center overflow-x-hidden">
       <div className="glow glow-1" />
       <div className="glow glow-2" />
 
