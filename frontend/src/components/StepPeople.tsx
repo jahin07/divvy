@@ -138,8 +138,8 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
       title="Who's splitting?"
       description="Add everyone at the table. Adjust share weight for anyone paying a larger portion of shared items."
     >
-      <div className="mb-6">
-        <label className="block text-xs font-bold tracking-[0.12em] uppercase text-text-secondary mb-2">
+      <div className="mb-7">
+        <label className="block text-xs font-bold tracking-[0.12em] uppercase text-text-secondary mb-2.5">
           Bill title
         </label>
         <Input
@@ -151,7 +151,7 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
       </div>
 
       {status.configured && (
-        <div className="mb-6">
+        <div className="mb-7">
           <button
             type="button"
             onClick={() => setImportOpen((o) => !o)}
@@ -268,7 +268,7 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
         </div>
       )}
 
-      <label className="block text-xs font-bold tracking-[0.12em] uppercase text-text-secondary mb-3">
+      <label className="block text-xs font-bold tracking-[0.12em] uppercase text-text-secondary mb-3.5">
         People
       </label>
       <div className="flex flex-col gap-3">
@@ -297,15 +297,17 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
           </div>
         ))}
       </div>
-      <Button variant="add" onClick={addPerson} className="mt-3">
+      <Button variant="add" onClick={addPerson} className="mt-4">
         + Add another person
       </Button>
       <ErrorMessage message={error} />
-      <div className="flex justify-end mt-7">
-        <Button variant="primary" onClick={onNext} className="px-8">
-          Continue
-        </Button>
-      </div>
+      <Button
+        variant="primary"
+        onClick={onNext}
+        className="w-full mt-8 py-3.5 text-base rounded-full"
+      >
+        Continue
+      </Button>
     </Card>
   )
 }

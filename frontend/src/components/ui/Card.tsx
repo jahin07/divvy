@@ -14,7 +14,7 @@ export function Card({ label, title, description, children }: CardProps) {
         {label}
       </div>
       <h2 className="font-display text-[1.6rem] mb-1 text-text">{title}</h2>
-      <p className="text-text-secondary text-sm mb-6 leading-relaxed max-[480px]:mb-5">{description}</p>
+      <p className="text-text-secondary text-sm mb-7 leading-relaxed">{description}</p>
       {children}
     </div>
   )
