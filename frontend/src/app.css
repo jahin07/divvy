@@ -58,20 +58,35 @@ body::after {
   z-index: 9999;
 }
 
+/* Push the whole app below the device safe area (notch / status bar). Kept in
+   plain CSS so the calc() spacing around `+` stays valid. */
+.app-shell {
+  padding-top: calc(2.5rem + env(safe-area-inset-top, 0px));
+}
+
 /* Frosted overlay sitting behind the device status bar. Blurs whatever page
-   content scrolls under the notch/time/battery so they don't visually collide.
-   Height collapses to 0 on devices without a safe-area inset. */
+   content scrolls under the notch/time/battery so they don't visually collide. */
 .safe-area-blur {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: env(safe-area-inset-top);
+  height: env(safe-area-inset-top, 0px);
   z-index: 50;
   pointer-events: none;
-  background: rgba(14, 14, 17, 0.55);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(14, 14, 17, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* When installed to the home screen / running full-screen, the web content
+   sits under the status bar. Guarantee the blur bar covers it even if the
+   reported inset is 0 (some iOS webviews report nothing). Stays invisible in a
+   normal desktop browser tab, which reports display-mode: browser. */
+@media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
+  .safe-area-blur {
+    height: max(env(safe-area-inset-top, 0px), 44px);
+  }
 }
 
 /* Ambient glow orbs */

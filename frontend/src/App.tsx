@@ -128,7 +128,7 @@ export default function App() {
           page content scrolling underneath stays legible instead of clashing. */}
       <div className="safe-area-blur" />
 
-      <div className="mx-auto w-full max-w-md px-5 pb-10 relative z-10 pt-[calc(2.5rem+env(safe-area-inset-top))]">
+      <div className="app-shell mx-auto w-full max-w-md px-5 pb-10 relative z-10">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="font-display text-[2.5rem] tracking-[-0.02em] bg-gradient-to-br from-amber to-[#f0c96e] bg-clip-text text-transparent mb-1 max-[480px]:text-[2rem]">
