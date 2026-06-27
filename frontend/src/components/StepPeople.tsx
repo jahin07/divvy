@@ -219,8 +219,11 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
       </div>
       {status.configured && (
         <div className="mt-4">
-          <Button variant="add" onClick={() => setImportOpen((o) => !o)}>
-            + Add a friend
+          <Button variant="addProminent" onClick={() => setImportOpen((o) => !o)}>
+            <svg className="w-4 h-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM2.5 16.5a5.5 5.5 0 0111 0M16 6.5v4M18 8.5h-4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Add a friend
           </Button>
 
           {importOpen && (
@@ -326,13 +329,17 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
         </div>
       )}
       <ErrorMessage message={error} />
-      <Button
-        variant="primary"
-        onClick={onNext}
-        className="w-full mt-8 py-3.5 text-base rounded-full"
-      >
-        Continue
-      </Button>
+      {/* Nothing to continue with until there are at least two people, so hide
+          the CTA until then (e.g. before any friend is added). */}
+      {people.length >= 2 && (
+        <Button
+          variant="primary"
+          onClick={onNext}
+          className="w-full mt-8 py-3.5 text-base rounded-full"
+        >
+          Continue
+        </Button>
+      )}
     </Card>
   )
 }
