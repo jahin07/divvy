@@ -27,6 +27,19 @@ export interface Item {
   participants: 'all' | string[]
 }
 
+export interface ScannedItem {
+  name: string
+  cost: number
+}
+
+export interface ScannedReceipt {
+  items: ScannedItem[]
+  tax?: number | null
+  tip?: number | null
+  total?: number | null
+  currency?: string | null
+}
+
 export interface BreakdownEntry {
   pre_tax: number
   tax: number

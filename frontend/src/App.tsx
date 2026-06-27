@@ -179,6 +179,7 @@ export default function App() {
                 error={state.error}
                 onBack={() => goToStep(2)}
                 onNext={() => goToStep(4)}
+                onScanTaxTip={(tax, tip) => dispatch({ type: 'SET_TAX_TIP', tax, tip })}
               />
             )}
             {state.step === 4 && (

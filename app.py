@@ -1,8 +1,10 @@
+import base64
 import os
 from flask import Flask, request, jsonify, send_from_directory, Response
 from bill_split import compute_split
 import splitwise_client as sw
 from splitwise_client import build_expense_payload, SplitwiseError
+import receipt_scan
 
 DIST_DIR = os.path.join(os.path.dirname(__file__), 'static', 'dist')
 
@@ -131,6 +133,32 @@ def splitwise_expense():
         expense_id = sw.create_expense(payload)
         return jsonify({'ok': True, 'expenseId': expense_id})
     except SplitwiseError as e:
+        return jsonify({'error': e.message}), e.status
+
+
+@app.route('/api/scan/status', methods=['GET'])
+def scan_status():
+    return jsonify({'configured': receipt_scan.configured()})
+
+
+@app.route('/api/scan-receipt', methods=['POST'])
+def scan_receipt():
+    data = request.get_json(silent=True) or {}
+    b64 = data.get('image')
+    if not b64 or not isinstance(b64, str):
+        return jsonify({'error': 'No image provided'}), 400
+    # Tolerate a data: URL prefix in case the client sends one.
+    if b64.strip().startswith('data:') and ',' in b64:
+        b64 = b64.split(',', 1)[1]
+    try:
+        image_bytes = base64.b64decode(b64, validate=True)
+    except Exception:
+        return jsonify({'error': 'Invalid image data'}), 400
+    if len(image_bytes) > 12 * 1024 * 1024:
+        return jsonify({'error': 'Image is too large'}), 413
+    try:
+        return jsonify(receipt_scan.extract_receipt(image_bytes))
+    except receipt_scan.ScanError as e:
         return jsonify({'error': e.message}), e.status
 
 
