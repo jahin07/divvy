@@ -31,7 +31,6 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
   const [importLoading, setImportLoading] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
   const [selectedGroupId, setSelectedGroupId] = useState<string>('')
-  const [selectedFriendIds, setSelectedFriendIds] = useState<Set<number>>(new Set())
   // Whether "you" are part of the split. Defaults on (the friends endpoint never
   // returns yourself), but removing yourself via the × must stick.
   const [includeMe, setIncludeMe] = useState(true)
@@ -103,34 +102,33 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
     onGroupIdChange(id)
   }
 
-  // Re-derive the people roster from the friends selection: you (unless removed)
-  // + the selected friends + any manually-added names. Existing share weights are
-  // carried over. This is the single source of truth, so a friend removed via the
-  // × (which also drops them from the selection) can never be silently re-added.
-  const buildFriendPeople = (ids: Set<number>, withMe: boolean): Person[] => {
-    const shareOf = (id: number) => people.find((p) => p.splitwiseId === id)?.share ?? 1
-    const mePerson: Person[] =
-      withMe && me ? [{ name: me.name, share: shareOf(me.id), splitwiseId: me.id }] : []
-    const friendPeople: Person[] = friends
-      .filter((f) => ids.has(f.id))
-      .map((f) => ({ name: f.name, share: shareOf(f.id), splitwiseId: f.id }))
-    const manual = people.filter((p) => p.splitwiseId == null && p.name.trim() !== '')
-    return [...mePerson, ...friendPeople, ...manual]
-  }
+  // Which Splitwise ids are currently in the roster. Derived from `people` (the
+  // persisted wizard state) rather than a separate piece of component state, so
+  // navigating away from this step and back — which unmounts/remounts and would
+  // reset local state — can't drop already-added people.
+  const selectedFriendIds = new Set(
+    people.filter((p) => p.splitwiseId != null).map((p) => p.splitwiseId as number),
+  )
 
   const toggleFriend = (friend: SplitwiseUser) => {
-    const next = new Set(selectedFriendIds)
-    if (next.has(friend.id)) {
-      next.delete(friend.id)
-    } else {
-      next.add(friend.id)
-    }
-    setSelectedFriendIds(next)
     // Clear the search box after a pick so the next friend can be typed
     // without having to backspace the previous query first.
     setFriendSearch('')
-    onChange(buildFriendPeople(next, includeMe))
     onGroupIdChange(null)
+
+    if (selectedFriendIds.has(friend.id)) {
+      onChange(people.filter((p) => p.splitwiseId !== friend.id))
+      return
+    }
+    // Adding: drop the empty placeholder rows but keep every real person, then
+    // append "you" (first friend only, unless explicitly removed) and the friend.
+    const base = people.filter((p) => p.splitwiseId != null || p.name.trim() !== '')
+    const additions: Person[] = []
+    if (me && includeMe && !base.some((p) => p.splitwiseId === me.id)) {
+      additions.push({ name: me.name, share: 1, splitwiseId: me.id })
+    }
+    additions.push({ name: friend.name, share: 1, splitwiseId: friend.id })
+    onChange([...base, ...additions])
   }
 
   const updatePerson = (index: number, field: keyof Person, value: string | number) => {
@@ -144,17 +142,12 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
 
   const removePerson = (index: number) => {
     if (people.length <= 2) return
-    // Keep the Splitwise selection in sync so a removed person isn't re-added on
-    // the next pick. Removing yourself sticks via the includeMe flag.
+    // Selection is derived from `people`, so removal updates it automatically.
+    // Removing yourself must stick, though: flag it so the next pick won't re-add
+    // you (you're otherwise auto-included on the first friend).
     const removed = people[index]
-    if (removed?.splitwiseId != null) {
-      if (me && removed.splitwiseId === me.id) {
-        setIncludeMe(false)
-      } else {
-        const next = new Set(selectedFriendIds)
-        next.delete(removed.splitwiseId)
-        setSelectedFriendIds(next)
-      }
+    if (me && removed?.splitwiseId === me.id) {
+      setIncludeMe(false)
     }
     onChange(people.filter((_, i) => i !== index))
   }
