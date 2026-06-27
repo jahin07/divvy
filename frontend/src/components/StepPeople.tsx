@@ -108,6 +108,9 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
       next.add(friend.id)
     }
     setSelectedFriendIds(next)
+    // Clear the search box after a pick so the next friend can be typed
+    // without having to backspace the previous query first.
+    setFriendSearch('')
     const selectedFriends: Person[] = friends
       .filter((f) => next.has(f.id))
       .map((f) => ({ name: f.name, share: 1, splitwiseId: f.id }))
@@ -136,7 +139,7 @@ export function StepPeople({ title, onTitleChange, people, onChange, error, onNe
     <Card
       label="Step 1"
       title="Who's splitting?"
-      description="Add everyone at the table. Adjust share weight for anyone paying a larger portion of shared items."
+      description="Add the people who are paying and their shares. Adjust share weight for anyone covering a larger portion of shared items."
     >
       <div className="mb-7">
         <label className="block text-xs font-bold tracking-[0.12em] uppercase text-text-secondary mb-2.5">
